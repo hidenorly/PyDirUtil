@@ -19,12 +19,20 @@ import random
 import string
 import time
 
+def expandPath(path):
+    if not os.path.isabs(path):
+        path = os.path.abspath(path)
+    return path
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='directory util', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('target', metavar='PATH', type=str, nargs='+', help='Target path (can specicy multiply)')
+    parser.add_argument('-a', '--absolutePath', action='store_true', help='Set this if absolute path is expected')
     args = parser.parse_args()
 
     for aPath in args.target:
         for dirpath, dirnames, filenames in os.walk(aPath):
+            if args.absolutePath:
+                dirpath = expandPath(dirpath)
             for filename in filenames:
                 print( dirpath+","+filename)
