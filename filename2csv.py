@@ -27,12 +27,20 @@ def expandPath(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='directory util', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('target', metavar='PATH', type=str, nargs='+', help='Target path (can specicy multiply)')
-    parser.add_argument('-a', '--absolutePath', action='store_true', help='Set this if absolute path is expected')
+    parser.add_argument('-a', '--absolutePath', default=False, action='store_true', help='Set this if absolute path is expected')
+    parser.add_argument('-d', '--directoryOnly', default=False, action='store_true', help='Set this if only directory is expected')
     args = parser.parse_args()
 
+    dirs = set()
     for aPath in args.target:
         for dirpath, dirnames, filenames in os.walk(aPath):
+            dirs.add( dirpath )
             if args.absolutePath:
                 dirpath = expandPath(dirpath)
-            for filename in filenames:
-                print( dirpath+","+filename)
+            if not args.directoryOnly:
+                for filename in filenames:
+                    print( dirpath+","+filename)
+    if args.directoryOnly:
+        for aDir in dirs:
+            print( aDir )
+
