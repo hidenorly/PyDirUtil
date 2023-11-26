@@ -20,12 +20,14 @@ import string
 import time
 from itertools import combinations
 
+DEFAULT_CHUNK_SIZE = 1024*1024*1024
+
 def expandPath(path):
     if not os.path.isabs(path):
         path = os.path.abspath(path)
     return path
 
-def isSameFile(path1, path2, chunkSize=4096):
+def isSameFile(path1, path2, chunkSize=DEFAULT_CHUNK_SIZE):
     try:
         with open(path1, 'rb') as file1:
             while True:
