@@ -14,36 +14,77 @@
 
 import argparse
 import os
-import re
-import random
-import string
-import time
 from itertools import combinations
 
-DEFAULT_CHUNK_SIZE = 1024*1024*1024
+class DuplicatedFileUtil:
+    DEFAULT_CHUNK_SIZE = 1024*1024*1024
 
-def expandPath(path):
-    if not os.path.isabs(path):
-        path = os.path.abspath(path)
-    return path
+    def expandPath(path):
+        if not os.path.isabs(path):
+            path = os.path.abspath(path)
+        return path
 
-def isSameFile(path1, path2, chunkSize=DEFAULT_CHUNK_SIZE):
-    try:
-        with open(path1, 'rb') as file1:
-            while True:
-                chunk1 = file1.read(chunkSize)
-                if not chunk1:
-                    break
-
+    def isSameFile(path1, path2, _chunkSize=DEFAULT_CHUNK_SIZE):
+        isFirstRead = True
+        try:
+            with open(path1, 'rb') as file1:
                 with open(path2, 'rb') as file2:
-                    chunk2 = file2.read(len(chunk1))
+                    while True:
+                        if isFirstRead:
+                            chunkSize = 4096
+                            isFirstRead = False
+                        else:
+                            chunkSize = _chunkSize
+                        chunk1 = file1.read(chunkSize)
+                        chunk2 = file2.read(chunkSize)
+                        if not chunk1 or not chunk2:
+                            break
+                        if chunk1 != chunk2:
+                            return False
 
-                if chunk1 != chunk2:
-                    return False
+            return True
+        except:
+            return False
 
-        return True
-    except:
-        return False    
+    def getDuplicateFiles(targetPaths, isAbsolutePath):
+        sameFiles = {}
+
+        paths = set()
+        sizesAndPaths = {}
+        for aPath in targetPaths:
+            for dirpath, dirnames, filenames in os.walk(aPath):
+                if isAbsolutePath:
+                    dirpath = DuplicatedFileUtil.expandPath( dirpath )
+                for filename in filenames:
+                    thePath = os.path.join( dirpath, filename )
+                    paths.add( thePath )
+                    size = os.path.getsize( thePath )
+                    if not size in sizesAndPaths:
+                        sizesAndPaths[ size ] = []
+                    sizesAndPaths[size].append( thePath )
+
+        for size, samePaths in sizesAndPaths.items():
+            if len(samePaths)>=2:
+                combinationsList = list(combinations(samePaths, 2))
+                for combination in combinationsList:
+                    if DuplicatedFileUtil.isSameFile(combination[0], combination[1]):
+                        #print(f'{size}:{combination[0]}, {combination[1]}')
+                        if not combination[0] in sameFiles and not combination[1] in sameFiles:
+                            # not found both
+                            sameFiles[ combination[0] ] = []
+                            sameFiles[ combination[0] ].append( combination[1] )
+                        elif not combination[0] in sameFiles and combination[1] in sameFiles:
+                            # not found 0 but found 1
+                            sameFiles[ combination[1] ].append( combination[0] )
+                        elif combination[0] in sameFiles and not combination[1] in sameFiles:
+                            # found 0 but not found 1
+                            sameFiles[ combination[0] ].append( combination[1] )
+                        else:
+                            # both found <- error
+                            pass
+        return sameFiles
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='file util', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -51,41 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--absolutePath', default=False, action='store_true', help='Set this if absolute path is expected')
     args = parser.parse_args()
 
-    paths = set()
-    sizesAndPaths = {}
-    for aPath in args.target:
-        for dirpath, dirnames, filenames in os.walk(aPath):
-            if args.absolutePath:
-                dirpath = expandPath( dirpath )
-            for filename in filenames:
-                thePath = os.path.join( dirpath, filename )
-                paths.add( thePath )
-                size = os.path.getsize( thePath )
-                if not size in sizesAndPaths:
-                    sizesAndPaths[ size ] = []
-                sizesAndPaths[size].append( thePath )
-
-    sameFiles = {}
-
-    for size, samePaths in sizesAndPaths.items():
-        if len(samePaths)>=2:
-            combinationsList = list(combinations(samePaths, 2))
-            for combination in combinationsList:
-                if isSameFile(combination[0], combination[1]):
-                    #print(f'{size}:{combination[0]}, {combination[1]}')
-                    if not combination[0] in sameFiles and not combination[1] in sameFiles:
-                        # not found both
-                        sameFiles[ combination[0] ] = []
-                        sameFiles[ combination[0] ].append( combination[1] )
-                    elif not combination[0] in sameFiles and combination[1] in sameFiles:
-                        # not found 0 but found 1
-                        sameFiles[ combination[1] ].append( combination[0] )
-                    elif combination[0] in sameFiles and not combination[1] in sameFiles:
-                        # found 0 but not found 1
-                        sameFiles[ combination[0] ].append( combination[1] )
-                    else:
-                        # both found <- error
-                        pass
+    sameFiles = DuplicatedFileUtil.getDuplicateFiles(args.target, args.absolutePath)
 
     for file, theSameFiles in sameFiles.items():
         print(f'{file},{",".join(theSameFiles)}')
