@@ -20,7 +20,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='file util', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('target', metavar='PATH', type=str, nargs='+', help='Target path (can specicy multiply)')
     parser.add_argument('-d', '--actualDelete', default=False, action='store_true', help='Set if really want to delete')
-    parser.add_argument('-s', '--shorterPath', default=False, action='store_true', help="Set if want to delete shorter path's one")
+    parser.add_argument('-s', '--shorter', default=False, action='store_true', help="Set if want to delete shorter dir name 's one")
+    parser.add_argument('-f', '--filename', default=False, action='store_true', help="Set if want to delete shorter filename's one")
     args = parser.parse_args()
 
     sameFiles = DuplicatedFileUtil.getDuplicateFiles(args.target, True)
@@ -29,10 +30,16 @@ if __name__ == '__main__':
     	_sameFiles = []
     	_sameFiles.extend( theSameFiles )
     	_sameFiles.append( file )
-    	if args.shorterPath:
-	    	sortedPaths = sorted(_sameFiles, key=lambda path: (-len(os.path.dirname(path)[::-1]), -len(os.path.basename(path)[::-1])))
+    	if args.shorter:
+    		if args.filename:
+    			sortedPaths = sorted(_sameFiles, key=lambda path: (-len(os.path.basename(path)[::-1]), -len(os.path.dirname(path)[::-1])) )
+    		else:
+    			sortedPaths = sorted(_sameFiles, key=lambda path: (-len(os.path.dirname(path)[::-1]), -len(os.path.basename(path)[::-1])) )
     	else:
-	    	sortedPaths = sorted(_sameFiles, key=lambda path: (len(os.path.dirname(path)[::-1]), len(os.path.basename(path)[::-1])))
+    		if args.filename:
+    			sortedPaths = sorted(_sameFiles, key=lambda path: (len(os.path.basename(path)[::-1]), len(os.path.dirname(path)[::-1])) )
+    		else:
+    			sortedPaths = sorted(_sameFiles, key=lambda path: (len(os.path.dirname(path)[::-1]), len(os.path.basename(path)[::-1])) )
     	keepFile = sortedPaths[0]
     	for aCandidateToDelete in sortedPaths:
     		if aCandidateToDelete!=keepFile:
