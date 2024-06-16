@@ -24,12 +24,15 @@ def count_files(directory, file_pattern):
                 file_count += 1
     return file_count
 
-def generate_report(directory, output_file, file_pattern, dont_output_if_zero = False):
+def generate_report(directory, output_file, file_pattern, dont_output_if_zero = False, max_level = None):
     report = []
+    if max_level!=None:
+        max_level = max_level + 1
     for root, dirs, files in os.walk(directory):
-        folder_name = os.path.relpath(root, directory)
-        file_count = count_files(root, file_pattern)
-        report.append((folder_name, file_count))
+        if not max_level or (len(root.split("/"))<=max_level):
+            folder_name = os.path.relpath(root, directory)
+            file_count = count_files(root, file_pattern)
+            report.append((folder_name, file_count))
 
     file_writer = None
     if output_file:
@@ -53,9 +56,10 @@ if __name__ == "__main__":
     parser.add_argument("-o", dest="output_file", help="CSV file to output the results")
     parser.add_argument("-f", dest="file_pattern", default=None, help="Regular expression pattern for file matching")
     parser.add_argument("-n", dest="no_zero", default=False, action="store_true", help="Set if excludes 0 file count directory")
+    parser.add_argument("-m", dest="max_level", type=int, default=None, help="Max depth (default:infinite)")
     args = parser.parse_args()
 
-    generate_report(args.target_directory, args.output_file, args.file_pattern, args.no_zero)
+    generate_report(args.target_directory, args.output_file, args.file_pattern, args.no_zero, args.max_level)
 
 
 
