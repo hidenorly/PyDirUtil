@@ -24,6 +24,14 @@ def count_files(directory, file_pattern):
                 file_count += 1
     return file_count
 
+def report_csv(file_writer, data={}):
+    for key, value in data.items():
+        line = f"{key},{value}"
+        if file_writer:
+            file_writer.write(line+"\n")
+        else:
+            print(line)
+
 def generate_report(directory, output_file, file_pattern, dont_output_if_zero = False, min_level=0, max_level = None):
     report = []
     if max_level!=None:
@@ -40,12 +48,10 @@ def generate_report(directory, output_file, file_pattern, dont_output_if_zero = 
         file_writer = open(output_file, 'w', newline='')
 
     for folder_name, file_count in report:
-        line = f"{folder_name},{file_count}"
         if not dont_output_if_zero or file_count:
-            if file_writer:
-                file_writer.write(line+"\n")
-            else:
-                print(line)
+            data = {}
+            data[folder_name] = file_count
+            report_csv(file_writer, data)
 
     if file_writer:
         file_writer.close()
