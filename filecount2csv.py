@@ -32,7 +32,15 @@ def report_csv(file_writer, data={}):
         else:
             print(line)
 
-def generate_report(directory, output_file, file_pattern, dont_output_if_zero = False, min_level=0, max_level = None):
+def report_md(file_writer, data={}):
+    for key, value in data.items():
+        line = f"| {key} | {value} |"
+        if file_writer:
+            file_writer.write(line+"\n")
+        else:
+            print(line)
+
+def generate_report(directory, output_file, file_pattern, dont_output_if_zero = False, min_level=0, max_level = None, format="csv"):
     report = []
     if max_level!=None:
         max_level = max_level + 1
@@ -46,12 +54,15 @@ def generate_report(directory, output_file, file_pattern, dont_output_if_zero = 
     file_writer = None
     if output_file:
         file_writer = open(output_file, 'w', newline='')
+    reporter = report_csv
+    if format=="md":
+        reporter = report_md
 
     for folder_name, file_count in report:
         if not dont_output_if_zero or file_count:
             data = {}
             data[folder_name] = file_count
-            report_csv(file_writer, data)
+            reporter(file_writer, data)
 
     if file_writer:
         file_writer.close()
@@ -64,10 +75,11 @@ if __name__ == "__main__":
     parser.add_argument("-f", dest="file_pattern", default=None, help="Regular expression pattern for file matching")
     parser.add_argument("-n", dest="no_zero", default=False, action="store_true", help="Set if excludes 0 file count directory")
     parser.add_argument("-m", dest="max_level", type=int, default=None, help="Max depth (default:infinite)")
-    parser.add_argument("-i", dest="min_level", type=int, default=0, help="Min depth (default:0")
+    parser.add_argument("-i", dest="min_level", type=int, default=0, help="Min depth (default:0)")
+    parser.add_argument("-r", dest="format", default="csv", help="csv or md")
     args = parser.parse_args()
 
-    generate_report(args.target_directory, args.output_file, args.file_pattern, args.no_zero, args.min_level, args.max_level)
+    generate_report(args.target_directory, args.output_file, args.file_pattern, args.no_zero, args.min_level, args.max_level, args.format)
 
 
 
